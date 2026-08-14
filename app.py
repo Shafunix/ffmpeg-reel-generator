@@ -16,44 +16,37 @@ def cleanup_files(*file_paths):
                 pass
 
 @app.post("/generate-reel")
-def generate_reel(payload: dict, background_tasks: BackgroundTasks):
+async def generate_reel(payload: dict):
     image_url = payload.get("image_url")
     if not image_url:
         raise HTTPException(status_code=400, detail="Missing image_url field")
 
-    session_id = str(uuid.uuid4())
-    input_jpg = f"/tmp/{session_id}_input.jpg"
-    output_mp4 = f"/tmp/{session_id}_output.mp4"
+    input_jpg = "temp_input.jpg"
+    output_mp4 = "output_reel.mp4"
 
     try:
-        res = requests.get(image_url, timeout=15)
-        res.raise_for_status()
+        # Pobieranie obrazu
+        response = requests.get(image_url, timeout=15)
+        response.raise_for_status()
         with open(input_jpg, "wb") as f:
-            f.write(res.content)
+            f.write(response.content)
 
-ffmpeg_cmd = [
-    "ffmpeg", "-y",
-    "-loop", "1",
-    "-i", input_jpg,
-    "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0015,1.15)':d=125:fps=25:s=720x1280:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
-    "-c:v", "libx264",
-    "-preset", "ultrafast",
-    "-tune", "stillimage",
-    "-t", "5",
-    "-pix_fmt", "yuv420p",
-    output_mp4
-]
+        # Komenda FFmpeg z optymalizacją prędkości i stałym FPS
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-loop", "1",
+            "-i", input_jpg,
+            "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0015,1.15)':d=125:fps=25:s=720x1280:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-tune", "stillimage",
+            "-t", "5",
+            "-pix_fmt", "yuv420p",
+            output_mp4
+        ]
 
         subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        background_tasks.add_task(cleanup_files, input_jpg, output_mp4)
-
-        return FileResponse(
-            path=output_mp4,
-            media_type="video/mp4",
-            filename=f"reel_{session_id}.mp4"
-        )
+        return FileResponse(output_mp4, media_type="video/mp4")
 
     except Exception as e:
-        cleanup_files(input_jpg, output_mp4)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Rendering error: {str(e)}")
