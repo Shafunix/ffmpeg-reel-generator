@@ -35,7 +35,7 @@ ffmpeg_cmd = [
     "ffmpeg", "-y",
     "-loop", "1",
     "-i", input_jpg,
-    "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0015,1.15)':d=150:s=720x1280:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
+    "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0015,1.15)':d=125:fps=25:s=720x1280:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
     "-c:v", "libx264",
     "-preset", "ultrafast",
     "-tune", "stillimage",
