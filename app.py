@@ -31,16 +31,18 @@ def generate_reel(payload: dict, background_tasks: BackgroundTasks):
         with open(input_jpg, "wb") as f:
             f.write(res.content)
 
-        ffmpeg_cmd = [
-            "ffmpeg", "-y",
-            "-loop", "1",
-            "-i", input_jpg,
-            "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.15)':d=150:s=1080x1920:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
-            "-c:v", "libx264",
-            "-t", "5",
-            "-pix_fmt", "yuv420p",
-            output_mp4
-        ]
+ffmpeg_cmd = [
+    "ffmpeg", "-y",
+    "-loop", "1",
+    "-i", input_jpg,
+    "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,zoompan=z='min(zoom+0.0015,1.15)':d=150:s=720x1280:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'",
+    "-c:v", "libx264",
+    "-preset", "ultrafast",
+    "-tune", "stillimage",
+    "-t", "5",
+    "-pix_fmt", "yuv420p",
+    output_mp4
+]
 
         subprocess.run(ffmpeg_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
